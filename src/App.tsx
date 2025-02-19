@@ -272,7 +272,7 @@ const App = () => {
       </div> */}
       <div className="combinations-container">
         <h3 className="combinations-title">
-          Các tổ hợp đã thử: {combinations.size} (
+          Các thứ tự đã thử: {combinations.size} (
           {Math.round((combinations.size / totalCombinations) * 100)}%)
         </h3>
         <div className="combinations-list">{renderCombinations()}</div>
