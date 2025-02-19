@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react'
 import './styles.css'
+import failSound from '/audio/fail-sound.mp3'
+import starBlinkSound from '/audio/star-blink-sound.mp3'
+import star from '/images/star.png'
 
-const adjustColor = (color) => {
-  const colors = {
+type Color = 'blue' | 'red' | 'orange' | 'purple' | 'pink'
+type Hole = Color | null
+
+interface AudioState {
+  currentTime: number
+  preload: string
+  play(): Promise<void>
+}
+
+const adjustColor = (color: string): string => {
+  const colors: { [key: string]: string } = {
     blue: '#2980b9',
     red: '#c0392b',
     orange: '#d35400',
@@ -12,21 +24,20 @@ const adjustColor = (color) => {
   return colors[color] || color
 }
 
-const defaultFlags = ['blue', 'red', 'orange', 'purple', 'pink']
+const defaultFlags: Color[] = ['blue', 'red', 'orange', 'purple', 'pink']
 
-export default function App() {
-  const [flags, setFlags] = useState(defaultFlags)
-  const [draggedIndex, setDraggedIndex] = useState(null)
-  const [holes, setHoles] = useState([null, null])
-  const [message, setMessage] = useState(null)
-  const [combinations, setCombinations] = useState(new Set())
-  const [totalCombinations, setTotalCombinations] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const [toast, setToast] = useState(null)
-  const [starAnimation, setStarAnimation] = useState(false)
+const App = () => {
+  const [flags, setFlags] = useState<Color[]>(defaultFlags)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [holes, setHoles] = useState<Hole[]>([null, null])
+  const [message, setMessage] = useState<string | null>(null)
+  const [combinations, setCombinations] = useState<Set<string>>(new Set())
+  const [totalCombinations, setTotalCombinations] = useState<number>(0)
+  const [progress, setProgress] = useState<number>(0)
+  const [toast, setToast] = useState<string | null>(null)
+  const [starAnimation, setStarAnimation] = useState<boolean>(false)
 
-  const calculatePermutations = (n, r) => {
-    // Calculate n!/(n-r)!
+  const calculatePermutations = (n: number, r: number): number => {
     let result = 1
     for (let i = 0; i < r; i++) {
       result *= n - i
@@ -46,14 +57,14 @@ export default function App() {
   }, [combinations, totalCombinations])
 
   // Preload audio and keep reference
-  const [starBlinkSound] = useState(() => {
-    const audio = new Audio('/audio/star-blink-sound.mp3')
+  const [starBlinkAudio] = useState<AudioState>(() => {
+    const audio = new Audio(starBlinkSound)
     audio.preload = 'auto' // Preload the audio file
     return audio
   })
 
-  const [failSound] = useState(() => {
-    const audio = new Audio('/audio/fail-sound.mp3')
+  const [failAudio] = useState<AudioState>(() => {
+    const audio = new Audio(failSound)
     audio.preload = 'auto'
     return audio
   })
@@ -78,29 +89,31 @@ export default function App() {
     setCombinations(new Set())
   }
 
-  const handleDragStart = (index) => {
+  const handleDragStart = (index: number): void => {
     setDraggedIndex(index)
   }
 
-  const handleTouchStart = (index) => {
+  const handleTouchStart = (index: number): void => {
     setDraggedIndex(index)
   }
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent): void => {
     e.preventDefault()
   }
 
-  // Helper function to create a unique string key for each combination
-  const createCombinationKey = (combo) => {
+  const createCombinationKey = (combo: Hole[]): string => {
     return combo.join('-')
   }
 
-  const showToast = (message) => {
+  const showToast = (message: string): void => {
     setToast(message)
     setTimeout(() => setToast(null), 2000)
   }
 
-  const handleDrop = (e, holeIndex) => {
+  const handleDrop = (
+    e: React.DragEvent | React.TouchEvent,
+    holeIndex: number,
+  ): void => {
     e.preventDefault()
     if (holes[holeIndex] === null && draggedIndex !== null) {
       const newHoles = [...holes]
@@ -114,8 +127,8 @@ export default function App() {
           showToast('+1 điểm')
 
           // Play success sound and trigger star animation
-          starBlinkSound.currentTime = 0
-          const playPromise = starBlinkSound.play()
+          starBlinkAudio.currentTime = 0
+          const playPromise = starBlinkAudio.play()
           if (playPromise !== undefined) {
             playPromise.catch((error) =>
               console.log('Audio play failed:', error),
@@ -127,8 +140,8 @@ export default function App() {
         } else {
           showToast('Tổ hợp này đã được thử!')
           // Play fail sound
-          failSound.currentTime = 0
-          const playPromise = failSound.play()
+          failAudio.currentTime = 0
+          const playPromise = failAudio.play()
           if (playPromise !== undefined) {
             playPromise.catch((error) =>
               console.log('Audio play failed:', error),
@@ -143,7 +156,7 @@ export default function App() {
     setDraggedIndex(null)
   }
 
-  const handleTouchEnd = (e, holeIndex) => {
+  const handleTouchEnd = (e: React.TouchEvent, holeIndex: number): void => {
     handleDrop(e, holeIndex)
   }
 
@@ -153,16 +166,16 @@ export default function App() {
     setMessage(null)
   }
 
-  const handleRightClick = (e, holeIndex) => {
-    e.preventDefault(); // Prevent default context menu
+  const handleRightClick = (e: React.MouseEvent, holeIndex: number): void => {
+    e.preventDefault() // Prevent default context menu
     if (holes[holeIndex] !== null) {
-      const removedFlag = holes[holeIndex];
-      setFlags([...flags, removedFlag]);
-      const newHoles = [...holes];
-      newHoles[holeIndex] = null;
-      setHoles(newHoles);
+      const removedFlag = holes[holeIndex] as Color
+      setFlags([...flags, removedFlag])
+      const newHoles = [...holes]
+      newHoles[holeIndex] = null
+      setHoles(newHoles)
     }
-  };
+  }
 
   const renderCombinations = () => {
     return Array.from(combinations).map((comboKey, index) => {
@@ -176,7 +189,6 @@ export default function App() {
               style={{
                 background: `linear-gradient(135deg, ${color}, ${adjustColor(
                   color,
-                  -20,
                 )})`,
                 width: '2rem',
                 height: '1.5rem',
@@ -206,7 +218,6 @@ export default function App() {
               style={{
                 background: `linear-gradient(135deg, ${color}, ${adjustColor(
                   color,
-                  -20,
                 )})`,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
               }}
@@ -216,7 +227,7 @@ export default function App() {
       </div>
       <div className="star-container">
         <img
-          src="/images/star.png"
+          src={star}
           alt="Progress Star"
           className={`star ${starAnimation ? 'star-success' : ''}`}
           style={{ opacity: progress / 100 }}
@@ -261,7 +272,7 @@ export default function App() {
       </div> */}
       <div className="combinations-container">
         <h3 className="combinations-title">
-          Các tổ hợp đã thử: {combinations.size}/{totalCombinations} (
+          Các tổ hợp đã thử: {combinations.size} (
           {Math.round((combinations.size / totalCombinations) * 100)}%)
         </h3>
         <div className="combinations-list">{renderCombinations()}</div>
@@ -274,7 +285,9 @@ export default function App() {
         >
           <i className="fas fa-redo-alt"></i> Reset
         </button>
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+        <div
+          style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}
+        >
           <button
             onClick={handleIncreaseHoles}
             className="button increase-button"
@@ -295,3 +308,5 @@ export default function App() {
     </div>
   )
 }
+
+export default App
