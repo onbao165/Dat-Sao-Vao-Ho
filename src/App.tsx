@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import './styles.css'
-import failSound from '/audio/fail-sound.mp3'
+import failSound from '/audio/fail-sound-2.mp3'
 import starBlinkSound from '/audio/star-blink-sound.mp3'
-import star from '/images/star.png'
+import star from '/images/star-2.png'
 
 type Color = 'blue' | 'red' | 'orange' | 'purple' | 'pink'
 type Hole = Color | null
